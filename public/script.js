@@ -8,6 +8,9 @@ let palpite = "";
 const socket = io();
 let currentRoom = null;
 
+// Referência ao label do oponente será definida depois que o elemento for criado
+let opponentLabel; // Definimos como variável global, mas só atribuiremos o valor mais tarde
+
 // Eventos do menu
 document.getElementById('createRoom').onclick = () => {
     socket.emit('createRoom');
@@ -23,6 +26,11 @@ socket.on('roomCreated', (roomId) => {
     currentRoom = roomId;
     document.getElementById('menu').style.display = 'none';
     alert(`Sala criada! Código: ${roomId}`);
+
+    // Alterar o texto do label para "Aguardando Oponente ..." e desabilitar o teclado
+    opponentLabel.textContent = "Aguardando Oponente ...";
+    disableKeyboard();
+
     console.log(`Host: Sala criada com ID ${roomId}, currentRoom: ${currentRoom}`);
 });
 
@@ -31,6 +39,11 @@ socket.on('gameStart', (palavra) => {
     document.getElementById('menu').style.display = 'none';
     document.getElementById('game').style.display = 'grid';
     document.getElementById('keyboard').style.display = 'flex';
+
+    // Alterar o texto do label para "Oponente" e reativar o teclado
+    opponentLabel.textContent = "Oponente";
+    enableKeyboard();
+
     console.log(`Jogo iniciado! currentRoom: ${currentRoom}`);
 });
 
@@ -155,7 +168,7 @@ playerContainer.appendChild(game);
 // Opponent container
 const opponentContainer = document.createElement("div");
 opponentContainer.classList.add("opponent-container");
-const opponentLabel = document.createElement("div");
+opponentLabel = document.createElement("div"); // Atribuímos o elemento criado diretamente à variável opponentLabel
 opponentLabel.classList.add("container-label");
 opponentLabel.textContent = "Oponente";
 opponentContainer.appendChild(opponentLabel);
@@ -280,10 +293,17 @@ function checkGuess() {
     }
 }
 
-// Desativa o teclado ao fim do jogo
+// Desativa o teclado ao fim do jogo ou enquanto o oponente não entra
 function disableKeyboard() {
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = true;
+    });
+}
+
+// Reativa o teclado quando o jogo começa
+function enableKeyboard() {
+    document.querySelectorAll(".key").forEach(key => {
+        key.disabled = false;
     });
 }
 

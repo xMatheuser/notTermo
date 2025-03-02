@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>notTermo - Jogo de Palavras</title>
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        h1 {
+            color: rgb(235, 235, 241);
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>notTermo</h1>
+    <div id="menu">
+        <button id="createRoom">Clique Aqui para Criar Sala</button>
+        <div>
+            <input type="text" id="roomId" placeholder="Código da sala">
+            <button id="joinRoom">Entrar na Sala</button>
+        </div>
+    </div>
+    <div id="game" class="game-container"></div>
+    <div id="message"></div>
+    <div id="keyboard" class="keyboard"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

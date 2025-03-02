@@ -55,15 +55,38 @@ socket.on('joinRoomSuccess', (roomId) => {
 
 socket.on('opponentGuess', ({ palpite, linha }) => {
     console.log(`Palpite do oponente recebido: ${palpite}, Linha: ${linha}, currentRoom: ${currentRoom}`);
+    const palavraArr = palavraCorreta.split('');
+    const palpiteArr = palpite.split('');
+    const letterStates = new Array(5).fill('absent');
+    const usedPositions = new Set();
+
+    // Primeiro, verifica as letras corretas (posição exata)
+    for (let i = 0; i < colunas; i++) {
+        if (palpiteArr[i] === palavraArr[i]) {
+            letterStates[i] = 'correct';
+            usedPositions.add(i);
+        }
+    }
+
+    // Depois, verifica as letras presentes em posições diferentes
+    for (let i = 0; i < colunas; i++) {
+        if (letterStates[i] !== 'correct') {
+            for (let j = 0; j < colunas; j++) {
+                if (!usedPositions.has(j) && palpiteArr[i] === palavraArr[j]) {
+                    letterStates[i] = 'present';
+                    usedPositions.add(j);
+                    break;
+                }
+            }
+        }
+    }
+
+    // Aplica apenas as classes de cor e garante que não há texto
     for (let i = 0; i < colunas; i++) {
         const cell = document.getElementById(`opponent-cell-${linha}-${i}`);
-        if (palpite[i] === palavraCorreta[i]) {
-            cell.classList.add("correct");
-        } else if (palavraCorreta.includes(palpite[i])) {
-            cell.classList.add("present");
-        } else {
-            cell.classList.add("absent");
-        }
+        cell.textContent = ''; // Garante que não há texto
+        cell.classList.remove('typed'); // Remove a classe typed se existir
+        cell.classList.add(letterStates[i]);
     }
 });
 
@@ -123,17 +146,20 @@ socket.on('gameRestart', (newPalavra) => {
             const opponentCell = document.getElementById(`opponent-cell-${i}-${j}`);
             cell.textContent = "";
             cell.classList.remove("correct", "present", "absent", "typed");
-            opponentCell.textContent = "";
+            opponentCell.textContent = ""; // Garante que não há texto
             opponentCell.classList.remove("correct", "present", "absent", "typed");
         }
     }
 
-    document.getElementById('message').textContent = "";
+    // Reseta apenas teclas cinzas, mantém as verdes
     document.querySelectorAll(".key").forEach(key => {
-        key.disabled = false;
-        key.classList.remove("absent-key");  // Remove a classe de tecla ausente
+        if (!key.classList.contains('correct-key')) {
+            key.disabled = false;
+            key.classList.remove("absent-key");
+        }
     });
 
+    document.getElementById('message').textContent = "";
     console.log(`Jogo reiniciado.`);
 });
 
@@ -141,6 +167,15 @@ socket.on('waitingOpponent', (message) => {
     const messageDiv = document.getElementById('message');
     messageDiv.textContent = message;
     disableKeyboard();
+});
+
+socket.on('playerLeft', (playerId) => {
+    if (playerId !== socket.id) {
+        opponentLabel.textContent = "Oponente saiu";
+        setTimeout(() => {
+            location.reload();
+        }, 5000);
+    }
 });
 
 // Cria a grade do jogo
@@ -208,6 +243,7 @@ teclas.forEach(row => {
         const button = document.createElement("button");
         button.textContent = key;
         button.classList.add("key");
+        button.setAttribute('data-letter', key); // Adiciona data-letter
         button.onclick = () => handleKey(key);
         rowDiv.appendChild(button);
     });
@@ -259,22 +295,61 @@ function handleKey(key) {
 // Verifica o palpite
 function checkGuess() {
     const message = document.getElementById("message");
+    const palavraArr = palavraCorreta.split('');
+    const palpiteArr = palpite.split('');
+    const letterStates = new Array(5).fill('absent');
+    const usedPositions = new Set();
 
+    // Primeiro, verifica as letras corretas (posição exata)
     for (let i = 0; i < colunas; i++) {
-        const cell = document.getElementById(`cell-${linhaAtual}-${i}`);
-        if (palpite[i] === palavraCorreta[i]) {
-            cell.classList.add("correct");
-        } else if (palavraCorreta.includes(palpite[i])) {
-            cell.classList.add("present");
-        } else {
-            cell.classList.add("absent");
-            absentLetters.add(palpite[i]);  // Adiciona a letra ausente ao conjunto
+        if (palpiteArr[i] === palavraArr[i]) {
+            letterStates[i] = 'correct';
+            usedPositions.add(i);
         }
     }
 
-    // Atualiza o teclado para refletir as letras ausentes
-    updateKeyboard();
+    // Depois, verifica as letras presentes em posições diferentes
+    for (let i = 0; i < colunas; i++) {
+        if (letterStates[i] !== 'correct') {
+            for (let j = 0; j < colunas; j++) {
+                if (!usedPositions.has(j) && palpiteArr[i] === palavraArr[j]) {
+                    letterStates[i] = 'present';
+                    usedPositions.add(j);
+                    break;
+                }
+            }
+        }
+    }
 
+    // Aplica as classes correspondentes e atualiza o teclado
+    for (let i = 0; i < colunas; i++) {
+        const cell = document.getElementById(`cell-${linhaAtual}-${i}`);
+        cell.classList.add(letterStates[i]);
+        
+        const letter = palpiteArr[i];
+        const key = document.querySelector(`.key:not(.enter):not(.backspace)[data-letter="${letter}"]`);
+        
+        if (key) {
+            if (letterStates[i] === 'correct') {
+                key.classList.remove('absent-key', 'present-key');
+                key.classList.add('correct-key');
+                key.disabled = false;
+            } else if (letterStates[i] === 'present') {
+                if (!key.classList.contains('correct-key')) {
+                    key.classList.remove('absent-key');
+                    key.classList.add('present-key');
+                    key.disabled = false;
+                }
+            } else if (letterStates[i] === 'absent' && !palavraCorreta.includes(letter)) {
+                if (!key.classList.contains('correct-key') && !key.classList.contains('present-key')) {
+                    key.classList.add('absent-key');
+                    key.disabled = true;
+                }
+            }
+        }
+    }
+
+    // Resto da função continua igual
     if (currentRoom) {
         console.log(`Enviando palpite para o oponente: ${palpite}, Linha: ${linhaAtual}, Room: ${currentRoom}`);
         socket.emit('guess', {
@@ -298,17 +373,6 @@ function checkGuess() {
             socket.emit('gameLose', currentRoom);
         }
     }
-}
-
-// Função para atualizar o teclado com base nas letras ausentes
-function updateKeyboard() {
-    document.querySelectorAll(".key").forEach(key => {
-        const letter = key.textContent;
-        if (absentLetters.has(letter)) {
-            key.classList.add("absent-key");
-            key.disabled = true;
-        }
-    });
 }
 
 // Desativa o teclado ao fim do jogo ou enquanto o oponente não entra

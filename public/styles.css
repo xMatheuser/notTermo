@@ -394,3 +394,22 @@ body {
     opacity: 0.6; /* Torna a tecla um pouco translúcida */
     cursor: not-allowed; /* Indica que a tecla está desabilitada */
 }
+
+.key.correct-key {
+    background-color: #6aaa64 !important; /* Força a cor verde mesmo com outros estados */
+    color: white;
+    cursor: pointer;
+    opacity: 1 !important; /* Garante que a tecla não fique translúcida */
+}
+
+.key.present-key {
+    background-color: #c9b458 !important; /* Força a cor amarela mesmo com outros estados */
+    color: white;
+    cursor: pointer;
+    opacity: 1 !important; /* Garante que a tecla não fique translúcida */
+}
+
+/* Garante que o hover não afete teclas corretas ou ausentes */
+.key:not(.correct-key):not(.present-key):not(.absent-key):hover {
+    background-color: #b0b0b0;
+}

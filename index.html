@@ -11,12 +11,13 @@
             color: rgb(235, 235, 241);
         }
     </style>
-    <script src="/socket.io/socket.io.js"></script>
+    <!-- Carregar Socket.IO via CDN -->
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 </head>
 <body>
     <h1>notTermo</h1>
     <div id="menu">
-        <button id="createRoom">Clique Aqui para Criar Sala</button>
+        <button id="createRoom">Criar Sala</button>
         <div>
             <input type="text" id="roomId" placeholder="Código da sala">
             <button id="joinRoom">Entrar na Sala</button>

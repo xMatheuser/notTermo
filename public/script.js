@@ -157,6 +157,9 @@ socket.on('gameRestart', (newPalavra) => {
         key.classList.remove("absent-key", "correct-key", "present-key");
     });
 
+    // Garante que o teclado seja exibido corretamente em dispositivos móveis
+    document.getElementById('keyboard').style.display = 'flex';
+
     document.getElementById('message').textContent = "";
     console.log(`Jogo reiniciado.`);
 });

@@ -8,8 +8,6 @@ app.use(express.static(__dirname + '/public'));
 const rooms = new Map();
 const palavras = ["ABRIR", "ACASO", "ADEUS", "AGORA", "AMIGO", "ANDAR", "ANJOS", "APOIO", "AREIA", "ASTRO", "ATRAS", "AULAS", "AZEDO", "BAIXO", "BALSA", "BANCO", "BARCO", "BEBER", "BEIJO", "BLUSA", "BOLSA", "BONES", "BRASA", "BRIGA", "BRISA", "BRUTO", "CACTO", "CALMO", "CAMPO", "CANTO", "CAPAZ", "CARRO", "CARTA", "CASAS", "CHAVE", "CHEFE", "CHORO", "CHUVA", "CINCO", "CINTO", "CLARO", "CONTA", "CORPO", "CORTE", "COUVE", "CREME", "CUSTO", "DADOS", "DATAS", "DENTE", "DEPOR", "DISCO", "DOCES", "DORES", "DURAR", "ERVAS", "ESTAR", "ETAPA", "EXATO", "FALAR", "FALTA", "FARTO", "FAVOR", "FAZER", "FESTA", "FICAR", "FILHO", "FONTE", "FORMA", "FORTE", "FRACO", "FRASE", "FUGIR", "FUNDO", "GELAR", "GENTE", "GLOBO", "GOLPE", "GOTAS", "GOSTO", "GRAVE", "GRIPE", "GRUPO", "HOTEL", "HUMOR", "IDEIA", "IGUAL", "JOVEM", "LIMPO", "LIVRO", "LOUCO", "LUGAR", "LUCRO", "LUTAR", "MAIOR", "MATAR", "MEDIR", "MEDO", "MEIGA", "METAL", "MIMOS", "MINHA", "MISTO", "MODAS", "MOLDE", "MONTE", "MORAR", "MOTOR", "MULHER", "MUNDO", "MUSGO", "NADAR", "NOBRE", "NORTE", "NOTAS", "NOVOS", "NUNCA", "OBRAS", "ORDEM", "ORGAN", "PASTO", "PATOS", "PELOS", "PENSA", "PERNA", "PESAR", "PILAR", "PINGO", "PINTO", "PODER", "POLVO", "PONTE", "PORTE", "POSSE", "POSTO", "PRESO", "PRIMA", "PROVA", "PULSO", "QUASE", "QUEDA", "QUILO", "RADAR", "RAIOS", "RAMOS", "RANGO", "RASGO", "RATOS", "REINO", "REMAR", "RENDA", "RIMAS", "RISCO", "RITMO", "ROBOS", "RODAS", "ROSTO", "RUGIR", "SALDO", "SALTO", "SANTO", "SAUDE", "SELOS", "SENDA", "SERES", "SERVO", "SETOR", "SOBRE", "SOFAS", "SOGRA", "SOMAR", "SONDA", "SORTE", "SUBIR", "SUCOS", "SULCO", "TABUA", "TALAO", "TANTO", "TAPAS", "TARDE", "TENDA", "TENSO", "TERMO", "TESTE", "TIGRE", "TIMES", "TINHA", "TIRAR", "TITAN", "TOMAS", "TONEL", "TORRE", "TRAMA", "TRENO", "TRIGO", "TROCA", "TUBOS", "TUMBA", "TURMA", "UNHAS", "UNICO", "URSO", "VAGAS", "VALOR", "VELHA", "VENDA", "VENUS", "VERBO", "VIDAS", "VIGOR", "VILAO", "VINTE", "VIRAR", "VISOR", "VISTA", "VIVOS", "VOCES", "VOGAL", "VOTAR", "ZEBRA", "ZONAS"];
 
-
-
 io.on('connection', (socket) => {
     console.log('Usuario conectado:', socket.id);
 
@@ -57,9 +55,15 @@ io.on('connection', (socket) => {
 
             room.players.forEach(playerId => {
                 if (playerId === socket.id) {
-                    io.to(playerId).emit('gameResult', { result: 'win', message: 'Você ganhou' });
+                    io.to(playerId).emit('gameResult', { 
+                        result: 'win', 
+                        message: 'Você ganhou' 
+                    });
                 } else {
-                    io.to(playerId).emit('gameResult', { result: 'lose', message: 'Você perdeu' });
+                    io.to(playerId).emit('gameResult', { 
+                        result: 'lose', 
+                        message: `Você perdeu a palavra correta era: ${room.palavra}` 
+                    });
                 }
             });
             console.log(`Jogo na sala ${roomId} terminou. Ganhador: ${socket.id}`);
@@ -75,17 +79,16 @@ io.on('connection', (socket) => {
             const allFinished = room.players.every(playerId => room.playerStates.get(playerId).finished);
 
             if (allFinished) {
-                const winner = room.players.find(playerId => room.playerStates.get(playerId).won);
                 room.players.forEach(playerId => {
-                    if (winner) {
-                        return;
-                    } else {
-                        io.to(playerId).emit('gameResult', { result: 'lose', message: 'Você perdeu' });
-                    }
+                    io.to(playerId).emit('gameResult', { 
+                        result: 'lose', 
+                        message: `Suas tentativas acabaram! A palavra era: ${room.palavra}` 
+                    });
                 });
-                console.log(`Jogo na sala ${roomId} terminou. Nenhum jogador acertou a palavra.`);
+                console.log(`Jogo na sala ${roomId} terminou. Nenhum jogador acertou a palavra: ${room.palavra}`);
             } else {
                 socket.emit('waitingOpponent', 'Aguarde o oponente terminar de jogar...');
+                console.log(`Jogador ${socket.id} perdeu na sala ${roomId}, aguardando oponente`);
             }
         }
     });

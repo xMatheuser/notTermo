@@ -31,7 +31,7 @@ socket.on('gameStart', (palavra) => {
     document.getElementById('menu').style.display = 'none';
     document.getElementById('game').style.display = 'grid';
     document.getElementById('keyboard').style.display = 'flex';
-    console.log(`Jogo iniciado! currentRoom: ${currentRoom}`); // Removido palavraCorreta do log
+    console.log(`Jogo iniciado! currentRoom: ${currentRoom}`);
 });
 
 socket.on('joinRoomSuccess', (roomId) => {
@@ -56,21 +56,17 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
 socket.on('gameResult', ({ result, message }) => {
     console.log(`Resultado do jogo: ${result}, Mensagem: ${message}`);
 
-    // Cria a overlay
     const overlay = document.createElement('div');
     overlay.classList.add('result-overlay');
 
-    // Cria o contêiner para a mensagem e o botão
     const content = document.createElement('div');
     content.classList.add('result-content');
 
-    // Cria a mensagem
     const messageElement = document.createElement('div');
     messageElement.classList.add('result-message', 'glow-beat');
     messageElement.textContent = message;
     content.appendChild(messageElement);
 
-    // Cria o botão de revanche
     const rematchButton = document.createElement('button');
     rematchButton.classList.add('rematch-button');
     rematchButton.textContent = 'Revanche?';
@@ -84,15 +80,12 @@ socket.on('gameResult', ({ result, message }) => {
     overlay.appendChild(content);
     document.body.appendChild(overlay);
 
-    // Desativa o teclado
     disableKeyboard();
 
-    // Inicia o fade-out após 10 segundos
     setTimeout(() => {
         overlay.classList.add('fade-out');
     }, 10000);
 
-    // Remove a overlay após o fade-out
     setTimeout(() => {
         overlay.remove();
     }, 11000);
@@ -104,13 +97,11 @@ socket.on('rematchRequested', (message) => {
 });
 
 socket.on('gameRestart', (newPalavra) => {
-    // Reinicia o estado do jogo
     palavraCorreta = newPalavra;
     linhaAtual = 0;
     colunaAtual = 0;
     palpite = "";
 
-    // Limpa as grades
     for (let i = 0; i < linhas; i++) {
         for (let j = 0; j < colunas; j++) {
             const cell = document.getElementById(`cell-${i}-${j}`);
@@ -122,13 +113,12 @@ socket.on('gameRestart', (newPalavra) => {
         }
     }
 
-    // Limpa mensagens e reativa o teclado
     document.getElementById('message').textContent = "";
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = false;
     });
 
-    console.log(`Jogo reiniciado.`); // Removido palavraCorreta do log
+    console.log(`Jogo reiniciado.`);
 });
 
 socket.on('waitingOpponent', (message) => {
@@ -284,7 +274,6 @@ function checkGuess() {
         palpite = "";
         message.textContent = "";
     } else {
-        message.textContent = `Suas tentativas acabaram! A palavra era: [oculta]`; // Palavra oculta no cliente
         if (currentRoom) {
             socket.emit('gameLose', currentRoom);
         }

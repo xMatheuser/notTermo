@@ -151,12 +151,10 @@ socket.on('gameRestart', (newPalavra) => {
         }
     }
 
-    // Reseta apenas teclas cinzas, mantém as verdes
+    // Reseta todas as teclas ao estado inicial
     document.querySelectorAll(".key").forEach(key => {
-        if (!key.classList.contains('correct-key')) {
-            key.disabled = false;
-            key.classList.remove("absent-key");
-        }
+        key.disabled = false;
+        key.classList.remove("absent-key", "correct-key", "present-key");
     });
 
     document.getElementById('message').textContent = "";

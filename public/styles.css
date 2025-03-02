@@ -10,46 +10,54 @@ body {
     height: 100vh;
     justify-content: space-between;
     min-height: 100vh;
-    gap: 20px;
+    gap: 20px; /* Restored original gap for desktop */
+    overflow-y: auto;
 }
+
 .game-container {
     display: grid;
-    grid-template-columns: repeat(5, 80px);
-    grid-gap: 12px;
-    margin: 20px 0;
+    grid-template-columns: repeat(5, 80px); /* Restored original size for desktop */
+    grid-gap: 12px; /* Restored original gap for desktop */
+    margin: 20px 0; /* Restored original margin for desktop */
 }
+
 .cell {
-    width: 80px;
-    height: 80px;
+    width: 80px; /* Restored original size for desktop */
+    height: 80px; /* Restored original height for desktop */
     background-color: #f5f5f53d;
-    border: 4px solid #ccc;
+    border: 4px solid #ccc; /* Restored original border for desktop */
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40px;
+    font-size: 40px; /* Restored original font size for desktop */
     font-weight: bold;
     text-transform: uppercase;
     color: #ffffff;
-    border-radius: 8px;
+    border-radius: 8px; /* Restored original border radius for desktop */
 }
+
 .correct {
     background-color: #6aaa64;
     border-color: #6aaa64;
     color: #fff;
 }
+
 .present {
     background-color: #c9b458;
     border-color: #c9b458;
     color: #fff;
 }
+
 .absent {
     background-color: #787c7e;
     border-color: #787c7e;
     color: #fff;
 }
+
 .typed {
     animation: type 0.15s ease-out 0s 1 normal none running;
 }
+
 @keyframes type {
     0% {
         transform: scale(1);
@@ -61,110 +69,248 @@ body {
         transform: scale(1);
     }
 }
+
 .keyboard {
     display: flex;
     flex-direction: column;
     align-items: center;
-    max-width: 1000px;
-    margin: 0 auto;
+    max-width: 1000px; /* Restored original max-width for desktop */
     width: 100%;
-    padding-bottom: 20px;
-    margin-top: auto;
+    padding-bottom: 20px; /* Restored original padding for desktop */
 }
+
 .keyboard-row {
     display: flex;
     justify-content: center;
+    width: 100%;
 }
+
 .key {
-    width: 70px;
-    height: 80px;
+    width: 70px; /* Restored original size for desktop */
+    height: 80px; /* Restored original height for desktop */
     background-color: #00000080;
     color: #ffffff;
     border: none;
-    margin: 4px;
-    font-size: 30px;
+    margin: 4px; /* Restored original margin for desktop */
+    font-size: 30px; /* Restored original font size for desktop */
     font-weight: bold;
     text-transform: uppercase;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 12px; /* Restored original border radius for desktop */
 }
+
 .key:hover {
     background-color: #b0b0b0;
 }
+
 .key.enter {
-    width: 150px;
+    width: 150px; /* Restored original size for desktop */
     background-color: #6aaa64;
     color: #fff;
 }
+
 .key.backspace {
-    width: 100px;
+    width: 100px; /* Restored original size for desktop */
     background-color: #d9534f;
     color: #fff;
 }
+
 #message {
-    margin-top: 20px;
-    font-size: 24px;
+    margin-top: 20px; /* Restored original margin for desktop */
+    font-size: 24px; /* Restored original font size for desktop */
     color: #ffffff;
     text-align: center;
 }
+
 #menu {
     background-color: #f5f5f53d;
-    padding: 20px;
+    padding: 20px; /* Restored original padding for desktop */
     border-radius: 8px;
     text-align: center;
-    margin: 20px;
+    margin: 20px; /* Restored original margin for desktop */
 }
+
 #menu button {
     font-family: 'Varela Round', sans-serif;
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 18px;
+    padding: 10px 20px; /* Restored original padding for desktop */
+    margin: 10px; /* Restored original margin for desktop */
+    font-size: 18px; /* Restored original font size for desktop */
     border: none;
     border-radius: 4px;
     background-color: #6aaa64;
     color: white;
     cursor: pointer;
 }
+
 #menu input {
-    padding: 10px;
-    font-size: 16px;
+    padding: 10px; /* Restored original padding for desktop */
+    font-size: 16px; /* Restored original font size for desktop */
     border-radius: 4px;
     border: 2px solid #ccc;
-    margin-right: 10px;
+    margin-right: 10px; /* Restored original margin for desktop */
 }
+
 #opponent-game {
     opacity: 0.8;
 }
+
 .games-container {
     display: flex;
-    gap: 40px;
+    gap: 40px; /* Restored original gap for desktop */
     justify-content: center;
     width: 100%;
-    margin: 20px 0;
+    margin: 20px 0; /* Restored original margin for desktop */
 }
+
 .grids-container {
     display: flex;
     justify-content: center;
-    gap: 40px;
-    margin: 20px 0;
+    gap: 40px; /* Restored original gap for desktop */
+    margin: 20px 0; /* Restored original margin for desktop */
+    width: 100%;
 }
+
 .player-container {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+
 .opponent-container {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
+
 .container-label {
     color: #fff;
-    margin-bottom: 10px;
-    font-size: 1.2em;
+    margin-bottom: 10px; /* Restored original margin for desktop */
+    font-size: 1.2em; /* Restored original font size for desktop */
+}
+
+/* Mobile-specific styles */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+        justify-content: flex-start;
+        gap: 10px; /* Keep reduced gap for mobile */
+    }
+
+    h1 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+
+    .game-container {
+        grid-template-columns: repeat(5, 50px); /* Keep reduced size for mobile */
+        grid-gap: 8px; /* Keep reduced gap for mobile */
+        margin: 10px 0; /* Keep reduced margin for mobile */
+    }
+
+    .cell {
+        width: 50px; /* Keep reduced size for mobile */
+        height: 50px; /* Keep reduced height for mobile */
+        font-size: 24px; /* Keep reduced font size for mobile */
+        border: 3px solid #ccc; /* Keep reduced border for mobile */
+        border-radius: 6px; /* Keep reduced border radius for mobile */
+    }
+
+    .grids-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .player-container {
+        order: 1;
+    }
+
+    .opponent-container {
+        order: 2;
+        width: 150px;
+    }
+
+    #opponent-game.game-container {
+        grid-template-columns: repeat(5, 20px); /* Keep reduced size for opponent's grid on mobile */
+        grid-gap: 2px; /* Keep reduced gap for opponent's grid on mobile */
+    }
+
+    #opponent-game .cell {
+        width: 20px; /* Keep reduced size for opponent's grid on mobile */
+        height: 20px; /* Keep reduced height for opponent's grid on mobile */
+        font-size: 10px; /* Keep reduced font size for opponent's grid on mobile */
+        border: 1px solid #ccc; /* Keep thinner border for opponent's grid on mobile */
+        border-radius: 3px; /* Keep smaller border radius for opponent's grid on mobile */
+    }
+
+    .container-label {
+        font-size: 0.8em; /* Keep reduced font size for mobile */
+        margin-bottom: 5px; /* Keep reduced margin for mobile */
+    }
+
+    .keyboard {
+        position: sticky;
+        bottom: 0;
+        background-color: #080625;
+        padding: 10px 0;
+        margin-top: auto;
+        max-width: 100%; /* Override max-width for mobile to ensure full width */
+    }
+
+    .keyboard-row {
+        flex-wrap: nowrap;
+    }
+
+    .key {
+        width: 40px; /* Keep reduced size for mobile */
+        height: 50px; /* Keep reduced height for mobile */
+        margin: 2px; /* Keep reduced margin for mobile */
+        font-size: 16px; /* Keep reduced font size for mobile */
+        border-radius: 8px; /* Keep reduced border radius for mobile */
+    }
+
+    .key.enter {
+        width: 80px; /* Keep reduced size for mobile */
+    }
+
+    .key.backspace {
+        width: 60px; /* Keep reduced size for mobile */
+    }
+
+    #message {
+        margin-top: 10px; /* Keep reduced margin for mobile */
+        font-size: 18px; /* Keep reduced font size for mobile */
+    }
+
+    #menu {
+        padding: 15px; /* Keep reduced padding for mobile */
+        margin: 10px; /* Keep reduced margin for mobile */
+    }
+
+    #menu button {
+        padding: 8px 16px; /* Keep reduced padding for mobile */
+        margin: 5px; /* Keep reduced margin for mobile */
+        font-size: 16px; /* Keep reduced font size for mobile */
+    }
+
+    #menu input {
+        padding: 8px; /* Keep reduced padding for mobile */
+        font-size: 14px; /* Keep reduced font size for mobile */
+        margin-right: 5px; /* Keep reduced margin for mobile */
+    }
+
+    .games-container {
+        gap: 20px; /* Keep reduced gap for mobile */
+        margin: 10px 0; /* Keep reduced margin for mobile */
+    }
+
+    .grids-container {
+        gap: 20px; /* Keep reduced gap for mobile */
+        margin: 10px 0; /* Keep reduced margin for mobile */
+    }
 }
 
 /* Animação Glow Beat com Movimento */

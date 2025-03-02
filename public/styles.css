@@ -388,3 +388,9 @@ body {
     background-color: #787c7e;
     cursor: not-allowed;
 }
+
+.key.absent-key {
+    background-color: #787c7e; /* Mesmo cinza das células ausentes */
+    opacity: 0.6; /* Torna a tecla um pouco translúcida */
+    cursor: not-allowed; /* Indica que a tecla está desabilitada */
+}

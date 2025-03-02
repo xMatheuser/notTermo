@@ -4,6 +4,7 @@ const colunas = 5;
 let linhaAtual = 0;
 let colunaAtual = 0;
 let palpite = "";
+let absentLetters = new Set();  // Conjunto para rastrear letras ausentes
 
 const socket = io();
 let currentRoom = null;
@@ -114,6 +115,7 @@ socket.on('gameRestart', (newPalavra) => {
     linhaAtual = 0;
     colunaAtual = 0;
     palpite = "";
+    absentLetters.clear();  // Limpa o conjunto de letras ausentes
 
     for (let i = 0; i < linhas; i++) {
         for (let j = 0; j < colunas; j++) {
@@ -129,6 +131,7 @@ socket.on('gameRestart', (newPalavra) => {
     document.getElementById('message').textContent = "";
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = false;
+        key.classList.remove("absent-key");  // Remove a classe de tecla ausente
     });
 
     console.log(`Jogo reiniciado.`);
@@ -265,8 +268,12 @@ function checkGuess() {
             cell.classList.add("present");
         } else {
             cell.classList.add("absent");
+            absentLetters.add(palpite[i]);  // Adiciona a letra ausente ao conjunto
         }
     }
+
+    // Atualiza o teclado para refletir as letras ausentes
+    updateKeyboard();
 
     if (currentRoom) {
         console.log(`Enviando palpite para o oponente: ${palpite}, Linha: ${linhaAtual}, Room: ${currentRoom}`);
@@ -291,6 +298,17 @@ function checkGuess() {
             socket.emit('gameLose', currentRoom);
         }
     }
+}
+
+// Função para atualizar o teclado com base nas letras ausentes
+function updateKeyboard() {
+    document.querySelectorAll(".key").forEach(key => {
+        const letter = key.textContent;
+        if (absentLetters.has(letter)) {
+            key.classList.add("absent-key");
+            key.disabled = true;
+        }
+    });
 }
 
 // Desativa o teclado ao fim do jogo ou enquanto o oponente não entra

@@ -73,7 +73,7 @@ socket.on('gameResult', ({ result, message }) => {
     // Cria o botão de revanche
     const rematchButton = document.createElement('button');
     rematchButton.classList.add('rematch-button');
-    rematchButton.textContent = 'Revancha';
+    rematchButton.textContent = 'Revanche?';
     rematchButton.onclick = () => {
         socket.emit('requestRematch', currentRoom);
         rematchButton.disabled = true;

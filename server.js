@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
         const room = rooms.get(roomId);
         if (room) {
             room.rematchRequests.set(socket.id, true);
-            console.log(`Revancha solicitada por ${socket.id} na sala ${roomId}`);
+            console.log(`Revanche solicitada por ${socket.id} na sala ${roomId}`);
 
             room.players.forEach(playerId => {
                 if (playerId !== socket.id) {

@@ -22,14 +22,45 @@ document.getElementById('joinRoom').onclick = () => {
     socket.emit('joinRoom', roomId);
 };
 
+// Adicionar funcionalidade de cópia ao clicar no input
+document.getElementById('roomId').onclick = function() {
+    this.select();
+};
+
 // Eventos do Socket
 socket.on('roomCreated', (roomId) => {
     currentRoom = roomId;
     document.getElementById('menu').style.display = 'none';
-    alert(`Sala criada! Código: ${roomId}`);
+    
+    // Criar uma caixa de diálogo personalizada
+    const dialog = document.createElement('div');
+    dialog.classList.add('room-code-dialog');
+    
+    const message = document.createElement('p');
+    message.textContent = `Código da sala: ${roomId}`;
+    
+    const copyButton = document.createElement('button');
+    copyButton.textContent = 'Copiar código';
+    copyButton.onclick = () => {
+        navigator.clipboard.writeText(roomId)
+            .then(() => {
+                copyButton.textContent = 'Copiado!';
+                copyButton.style.backgroundColor = '#6aaa64';
+                setTimeout(() => {
+                    dialog.remove();
+                }, 2000);
+            })
+            .catch(() => {
+                copyButton.textContent = 'Erro ao copiar';
+                copyButton.style.backgroundColor = '#d9534f';
+            });
+    };
+    
+    dialog.appendChild(message);
+    dialog.appendChild(copyButton);
+    document.body.appendChild(dialog);
 
-    // Alterar o texto do label para "Aguardando Oponente ..." e desabilitar o teclado
-    opponentLabel.textContent = "Aguardando Oponente ...";
+    opponentLabel.textContent = "Aguardando Oponente";
     disableKeyboard();
 
     console.log(`Host: Sala criada com ID ${roomId}, currentRoom: ${currentRoom}`);

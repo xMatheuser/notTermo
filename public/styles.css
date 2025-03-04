@@ -413,3 +413,50 @@ body {
 .key:not(.correct-key):not(.present-key):not(.absent-key):hover {
     background-color: #b0b0b0;
 }
+
+/* Estilos para a caixa de diálogo do código da sala */
+.room-code-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(106, 170, 100, 0.3);
+}
+
+.room-code-dialog p {
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.room-code-dialog button {
+    background-color: #00000080;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.room-code-dialog button:hover {
+    background-color: #6aaa64;
+}
+
+/* Ajuste para dispositivos móveis */
+@media (max-width: 600px) {
+    .room-code-dialog {
+        width: 80%;
+        padding: 15px;
+    }
+
+    .room-code-dialog p {
+        font-size: 18px;
+    }
+}

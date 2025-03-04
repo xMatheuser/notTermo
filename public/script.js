@@ -336,6 +336,7 @@ function checkGuess() {
     const palpiteArr = palpite.split('');
     const letterStates = new Array(5).fill('absent');
     const usedPositions = new Set();
+    const isCorrect = palpite === palavraCorreta;
 
     // Primeiro, verifica as letras corretas (posição exata)
     for (let i = 0; i < colunas; i++) {
@@ -358,61 +359,86 @@ function checkGuess() {
         }
     }
 
-    // Aplica as classes correspondentes e atualiza o teclado
+    // Aplica as classes correspondentes com animação sequencial
+    let lastFlipTimeout = 0;
     for (let i = 0; i < colunas; i++) {
         const cell = document.getElementById(`cell-${linhaAtual}-${i}`);
-        cell.classList.add(letterStates[i]);
-        
         const letter = palpiteArr[i];
         const key = document.querySelector(`.key:not(.enter):not(.backspace)[data-letter="${letter}"]`);
         
-        if (key) {
-            if (letterStates[i] === 'correct') {
-                key.classList.remove('absent-key', 'present-key');
-                key.classList.add('correct-key');
-                key.disabled = false;
-            } else if (letterStates[i] === 'present') {
-                if (!key.classList.contains('correct-key')) {
-                    key.classList.remove('absent-key');
-                    key.classList.add('present-key');
-                    key.disabled = false;
+        // Adiciona delay sequencial para cada célula
+        const flipDelay = i * 200;
+        lastFlipTimeout = flipDelay + 600; // Guarda o tempo da última animação
+
+        setTimeout(() => {
+            cell.classList.add('flip');
+            
+            // Adiciona as classes de estado após metade da animação
+            setTimeout(() => {
+                cell.classList.add(letterStates[i]);
+                
+                // Atualiza o teclado após a animação
+                if (key) {
+                    if (letterStates[i] === 'correct') {
+                        key.classList.remove('absent-key', 'present-key');
+                        key.classList.add('correct-key');
+                        key.disabled = false;
+                    } else if (letterStates[i] === 'present') {
+                        if (!key.classList.contains('correct-key')) {
+                            key.classList.remove('absent-key');
+                            key.classList.add('present-key');
+                            key.disabled = false;
+                        }
+                    } else if (letterStates[i] === 'absent' && !palavraCorreta.includes(letter)) {
+                        if (!key.classList.contains('correct-key') && !key.classList.contains('present-key')) {
+                            key.classList.add('absent-key');
+                            key.disabled = true;
+                        }
+                    }
                 }
-            } else if (letterStates[i] === 'absent' && !palavraCorreta.includes(letter)) {
-                if (!key.classList.contains('correct-key') && !key.classList.contains('present-key')) {
-                    key.classList.add('absent-key');
-                    key.disabled = true;
+
+                // Se for a última célula e o palpite estiver correto, adiciona animação happy
+                if (i === colunas - 1 && isCorrect) {
+                    setTimeout(() => {
+                        for (let j = 0; j < colunas; j++) {
+                            const happyCell = document.getElementById(`cell-${linhaAtual}-${j}`);
+                            happyCell.classList.add('happy');
+                        }
+                    }, 100);
                 }
-            }
-        }
+            }, 250);
+        }, flipDelay);
     }
 
-    // Resto da função continua igual
-    if (currentRoom) {
-        console.log(`Enviando palpite para o oponente: ${palpite}, Linha: ${linhaAtual}, Room: ${currentRoom}`);
-        socket.emit('guess', {
-            roomId: currentRoom,
-            palpite: palpite,
-            linha: linhaAtual
-        });
-    }
-
-    if (palpite === palavraCorreta) {
+    // Aguarda todas as animações terminarem antes de continuar
+    setTimeout(() => {
         if (currentRoom) {
-            socket.emit('gameWin', {
+            console.log(`Enviando palpite para o oponente: ${palpite}, Linha: ${linhaAtual}, Room: ${currentRoom}`);
+            socket.emit('guess', {
                 roomId: currentRoom,
-                attempts: linhaAtual + 1
+                palpite: palpite,
+                linha: linhaAtual
             });
         }
-    } else if (linhaAtual < linhas - 1) {
-        linhaAtual++;
-        colunaAtual = 0;
-        palpite = "";
-        message.textContent = "";
-    } else {
-        if (currentRoom) {
-            socket.emit('gameLose', currentRoom);
+
+        if (isCorrect) {
+            if (currentRoom) {
+                socket.emit('gameWin', {
+                    roomId: currentRoom,
+                    attempts: linhaAtual + 1
+                });
+            }
+        } else if (linhaAtual < linhas - 1) {
+            linhaAtual++;
+            colunaAtual = 0;
+            palpite = "";
+            message.textContent = "";
+        } else {
+            if (currentRoom) {
+                socket.emit('gameLose', currentRoom);
+            }
         }
-    }
+    }, lastFlipTimeout + 800); // Aguarda todas as animações + tempo da animação happy
 }
 
 // Desativa o teclado ao fim do jogo ou enquanto o oponente não entra

@@ -460,3 +460,48 @@ body {
         font-size: 18px;
     }
 }
+
+.cell.flip {
+    animation: flip 0.6s ease forwards;
+    transform-style: preserve-3d;
+}
+
+.cell.happy {
+    animation: happy 0.8s ease-in-out;
+}
+
+@keyframes flip {
+    0% {
+        transform: rotateX(0deg);
+    }
+    45% {
+        transform: rotateX(90deg);
+    }
+    55% {
+        transform: rotateX(90deg);
+    }
+    100% {
+        transform: rotateX(0deg);
+    }
+}
+
+@keyframes happy {
+    0% {
+        transform: translateY(0);
+    }
+    20% {
+        transform: translateY(-20px);
+    }
+    40% {
+        transform: translateY(0);
+    }
+    60% {
+        transform: translateY(-10px);
+    }
+    80% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-5px);
+    }
+}

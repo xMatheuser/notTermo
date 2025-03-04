@@ -90,7 +90,7 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
     }
 });
 
-socket.on('gameResult', ({ result, message }) => {
+socket.on('gameResult', ({ result, message, attempts }) => {
     console.log(`Resultado do jogo: ${result}, Mensagem: ${message}`);
 
     const overlay = document.createElement('div');
@@ -102,6 +102,11 @@ socket.on('gameResult', ({ result, message }) => {
     const messageElement = document.createElement('div');
     messageElement.classList.add('result-message', 'glow-beat');
     messageElement.textContent = message;
+    
+    // Não adicionar o número de tentativas se já estiver incluído na mensagem
+    if (attempts && !message.includes('tentativas')) {
+        messageElement.textContent += ` (${attempts} tentativas)`;
+    }
     content.appendChild(messageElement);
 
     const rematchButton = document.createElement('button');
@@ -362,7 +367,10 @@ function checkGuess() {
 
     if (palpite === palavraCorreta) {
         if (currentRoom) {
-            socket.emit('gameWin', currentRoom);
+            socket.emit('gameWin', {
+                roomId: currentRoom,
+                attempts: linhaAtual + 1
+            });
         }
     } else if (linhaAtual < linhas - 1) {
         linhaAtual++;
@@ -396,4 +404,9 @@ document.addEventListener("keydown", (event) => {
     if (/^[A-Z]$/.test(key) || key === "ENTER" || key === "BACKSPACE") {
         handleKey(key);
     }
+});
+
+socket.on('opponentFinished', (message) => {
+    const messageDiv = document.getElementById('message');
+    messageDiv.textContent = message;
 });

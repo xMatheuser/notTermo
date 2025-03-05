@@ -19,9 +19,12 @@ function updateSelectedCell() {
     document.querySelectorAll('.cell').forEach(cell => {
         cell.classList.remove('selected');
     });
-    const cell = document.getElementById(`cell-${selectedCell.row}-${selectedCell.col}`);
-    if (cell) {
-        cell.classList.add('selected');
+    // Só adiciona a classe 'selected' se o jogo tiver começado
+    if (palavraCorreta) {
+        const cell = document.getElementById(`cell-${selectedCell.row}-${selectedCell.col}`);
+        if (cell) {
+            cell.classList.add('selected');
+        }
     }
 }
 

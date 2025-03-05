@@ -38,6 +38,7 @@ body {
 
 /* Nova classe para célula selecionada */
 .cell.selected {
+    border-width: 4px;
     border-color: #6aaa64; /* Verde para indicar seleção */
     box-shadow: 0 0 10px #6aaa64; /* Sombra para destacar */
     z-index: 1; /* Garante que a célula selecionada esteja acima das outras */

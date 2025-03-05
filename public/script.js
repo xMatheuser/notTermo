@@ -5,6 +5,7 @@ let linhaAtual = 0;
 let colunaAtual = 0;
 let palpite = "";
 let absentLetters = new Set();  // Conjunto para rastrear letras ausentes
+let isSubmitting = false;  // New flag to prevent multiple submissions
 
 const socket = io();
 let currentRoom = null;
@@ -85,40 +86,63 @@ socket.on('joinRoomSuccess', (roomId) => {
 });
 
 socket.on('opponentGuess', ({ palpite, linha }) => {
-    console.log(`Palpite do oponente recebido: ${palpite}, Linha: ${linha}, currentRoom: ${currentRoom}`);
-    const palavraArr = palavraCorreta.split('');
-    const palpiteArr = palpite.split('');
-    const letterStates = new Array(5).fill('absent');
-    const usedPositions = new Set();
+    // Cria uma fila de animações para evitar conflito com input do jogador
+    requestAnimationFrame(() => {
+        console.log(`Palpite do oponente recebido: ${palpite}, Linha: ${linha}, currentRoom: ${currentRoom}`);
+        const palavraArr = palavraCorreta.split('');
+        const palpiteArr = palpite.split('');
+        const letterStates = new Array(5).fill('absent');
+        const usedPositions = new Set();
 
-    // Primeiro, verifica as letras corretas (posição exata)
-    for (let i = 0; i < colunas; i++) {
-        if (palpiteArr[i] === palavraArr[i]) {
-            letterStates[i] = 'correct';
-            usedPositions.add(i);
+        // Primeiro, verifica as letras corretas (posição exata)
+        for (let i = 0; i < colunas; i++) {
+            if (palpiteArr[i] === palavraArr[i]) {
+                letterStates[i] = 'correct';
+                usedPositions.add(i);
+            }
         }
-    }
 
-    // Depois, verifica as letras presentes em posições diferentes
-    for (let i = 0; i < colunas; i++) {
-        if (letterStates[i] !== 'correct') {
-            for (let j = 0; j < colunas; j++) {
-                if (!usedPositions.has(j) && palpiteArr[i] === palavraArr[j]) {
-                    letterStates[i] = 'present';
-                    usedPositions.add(j);
-                    break;
+        // Depois, verifica as letras presentes em posições diferentes
+        for (let i = 0; i < colunas; i++) {
+            if (letterStates[i] !== 'correct') {
+                for (let j = 0; j < colunas; j++) {
+                    if (!usedPositions.has(j) && palpiteArr[i] === palavraArr[j]) {
+                        letterStates[i] = 'present';
+                        usedPositions.add(j);
+                        break;
+                    }
                 }
             }
         }
-    }
 
-    // Aplica apenas as classes de cor e garante que não há texto
-    for (let i = 0; i < colunas; i++) {
-        const cell = document.getElementById(`opponent-cell-${linha}-${i}`);
-        cell.textContent = ''; // Garante que não há texto
-        cell.classList.remove('typed'); // Remove a classe typed se existir
-        cell.classList.add(letterStates[i]);
-    }
+        // Aplica as classes com animação sequencial em um contexto isolado
+        let animationPromises = [];
+        for (let i = 0; i < colunas; i++) {
+            const cell = document.getElementById(`opponent-cell-${linha}-${i}`);
+            if (!cell) continue; // Proteção contra elementos não encontrados
+
+            // Remove classes anteriores
+            cell.classList.remove('correct', 'present', 'absent', 'typed');
+            
+            // Cria uma promise para cada animação
+            const promise = new Promise(resolve => {
+                setTimeout(() => {
+                    cell.classList.add('flip');
+                    setTimeout(() => {
+                        cell.classList.add(letterStates[i]);
+                        resolve();
+                    }, 250);
+                }, i * 200);
+            });
+            
+            animationPromises.push(promise);
+        }
+
+        // Aguarda todas as animações terminarem
+        Promise.all(animationPromises).then(() => {
+            console.log('Todas as animações do oponente concluídas');
+        });
+    });
 });
 
 socket.on('gameResult', ({ result, message, attempts }) => {
@@ -198,6 +222,9 @@ socket.on('gameRestart', (newPalavra) => {
 
     document.getElementById('message').textContent = "";
     console.log(`Jogo reiniciado.`);
+
+    // Re-enable the keyboard for the new game
+    enableKeyboard();
 });
 
 socket.on('waitingOpponent', (message) => {
@@ -304,7 +331,7 @@ teclas.forEach(row => {
 
 // Lógica de entrada de teclas
 function handleKey(key) {
-    if (!palavraCorreta) return;
+    if (!palavraCorreta || isSubmitting) return; // Prevent input if submitting or no word is set
     const message = document.getElementById("message");
 
     if (key === "ENTER") {
@@ -312,6 +339,8 @@ function handleKey(key) {
             message.textContent = "Digite uma palavra com 5 letras!";
             return;
         }
+        isSubmitting = true; // Set flag to prevent further submissions
+        disableKeyboard(); // Disable input while processing
         checkGuess();
     } else if (key === "BACKSPACE") {
         if (colunaAtual > 0) {
@@ -428,15 +457,19 @@ function checkGuess() {
                     attempts: linhaAtual + 1
                 });
             }
+            isSubmitting = false; // Reset flag after game ends
         } else if (linhaAtual < linhas - 1) {
             linhaAtual++;
             colunaAtual = 0;
             palpite = "";
             message.textContent = "";
+            isSubmitting = false; // Reset flag
+            enableKeyboard(); // Re-enable input for the next guess
         } else {
             if (currentRoom) {
                 socket.emit('gameLose', currentRoom);
             }
+            isSubmitting = false; // Reset flag after game ends
         }
     }, lastFlipTimeout + 800); // Aguarda todas as animações + tempo da animação happy
 }
@@ -446,6 +479,8 @@ function disableKeyboard() {
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = true;
     });
+    // Also disable physical keyboard input by setting a flag
+    window.isKeyboardDisabled = true;
 }
 
 // Reativa o teclado quando o jogo começa
@@ -453,10 +488,12 @@ function enableKeyboard() {
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = false;
     });
+    window.isKeyboardDisabled = false;
 }
 
 // Suporte a teclado físico
 document.addEventListener("keydown", (event) => {
+    if (window.isKeyboardDisabled) return; // Ignore physical keyboard input if disabled
     const key = event.key.toUpperCase();
     if (/^[A-Z]$/.test(key) || key === "ENTER" || key === "BACKSPACE") {
         handleKey(key);

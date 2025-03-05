@@ -2,16 +2,28 @@ let palavraCorreta = "";
 const linhas = 5;
 const colunas = 5;
 let linhaAtual = 0;
-let colunaAtual = 0;
+let colunaAtual = 0; // Agora representa a coluna selecionada na linha atual
 let palpite = "";
-let absentLetters = new Set();  // Conjunto para rastrear letras ausentes
-let isSubmitting = false;  // New flag to prevent multiple submissions
+let absentLetters = new Set();
+let isSubmitting = false;
 
 const socket = io();
 let currentRoom = null;
+let opponentLabel;
 
-// Referência ao label do oponente será definida depois que o elemento for criado
-let opponentLabel; // Definimos como variável global, mas só atribuiremos o valor mais tarde
+// Variável para rastrear a célula selecionada
+let selectedCell = { row: 0, col: 0 }; // Inicialmente, a primeira célula da primeira linha
+
+// Função para atualizar a seleção visual
+function updateSelectedCell() {
+    document.querySelectorAll('.cell').forEach(cell => {
+        cell.classList.remove('selected');
+    });
+    const cell = document.getElementById(`cell-${selectedCell.row}-${selectedCell.col}`);
+    if (cell) {
+        cell.classList.add('selected');
+    }
+}
 
 // Eventos do menu
 document.getElementById('createRoom').onclick = () => {
@@ -23,7 +35,6 @@ document.getElementById('joinRoom').onclick = () => {
     socket.emit('joinRoom', roomId);
 };
 
-// Adicionar funcionalidade de cópia ao clicar no input
 document.getElementById('roomId').onclick = function() {
     this.select();
 };
@@ -33,7 +44,6 @@ socket.on('roomCreated', (roomId) => {
     currentRoom = roomId;
     document.getElementById('menu').style.display = 'none';
     
-    // Criar uma caixa de diálogo personalizada
     const dialog = document.createElement('div');
     dialog.classList.add('room-code-dialog');
     
@@ -63,8 +73,6 @@ socket.on('roomCreated', (roomId) => {
 
     opponentLabel.textContent = "Aguardando Oponente";
     disableKeyboard();
-
-    console.log(`Host: Sala criada com ID ${roomId}, currentRoom: ${currentRoom}`);
 });
 
 socket.on('gameStart', (palavra) => {
@@ -73,28 +81,21 @@ socket.on('gameStart', (palavra) => {
     document.getElementById('game').style.display = 'grid';
     document.getElementById('keyboard').style.display = 'flex';
 
-    // Alterar o texto do label para "Oponente" e reativar o teclado
     opponentLabel.textContent = "Oponente";
     enableKeyboard();
-
-    console.log(`Jogo iniciado! currentRoom: ${currentRoom}`);
 });
 
 socket.on('joinRoomSuccess', (roomId) => {
     currentRoom = roomId;
-    console.log(`Oponente: Entrou na sala com ID ${roomId}, currentRoom: ${currentRoom}`);
 });
 
 socket.on('opponentGuess', ({ palpite, linha }) => {
-    // Cria uma fila de animações para evitar conflito com input do jogador
     requestAnimationFrame(() => {
-        console.log(`Palpite do oponente recebido: ${palpite}, Linha: ${linha}, currentRoom: ${currentRoom}`);
         const palavraArr = palavraCorreta.split('');
         const palpiteArr = palpite.split('');
         const letterStates = new Array(5).fill('absent');
         const usedPositions = new Set();
 
-        // Primeiro, verifica as letras corretas (posição exata)
         for (let i = 0; i < colunas; i++) {
             if (palpiteArr[i] === palavraArr[i]) {
                 letterStates[i] = 'correct';
@@ -102,7 +103,6 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
             }
         }
 
-        // Depois, verifica as letras presentes em posições diferentes
         for (let i = 0; i < colunas; i++) {
             if (letterStates[i] !== 'correct') {
                 for (let j = 0; j < colunas; j++) {
@@ -115,16 +115,13 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
             }
         }
 
-        // Aplica as classes com animação sequencial em um contexto isolado
         let animationPromises = [];
         for (let i = 0; i < colunas; i++) {
             const cell = document.getElementById(`opponent-cell-${linha}-${i}`);
-            if (!cell) continue; // Proteção contra elementos não encontrados
+            if (!cell) continue;
 
-            // Remove classes anteriores
             cell.classList.remove('correct', 'present', 'absent', 'typed');
             
-            // Cria uma promise para cada animação
             const promise = new Promise(resolve => {
                 setTimeout(() => {
                     cell.classList.add('flip');
@@ -138,16 +135,11 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
             animationPromises.push(promise);
         }
 
-        // Aguarda todas as animações terminarem
-        Promise.all(animationPromises).then(() => {
-            console.log('Todas as animações do oponente concluídas');
-        });
+        Promise.all(animationPromises);
     });
 });
 
 socket.on('gameResult', ({ result, message, attempts }) => {
-    console.log(`Resultado do jogo: ${result}, Mensagem: ${message}`);
-
     const overlay = document.createElement('div');
     overlay.classList.add('result-overlay');
 
@@ -157,8 +149,6 @@ socket.on('gameResult', ({ result, message, attempts }) => {
     const messageElement = document.createElement('div');
     messageElement.classList.add('result-message', 'glow-beat');
     messageElement.textContent = message;
-    
-    // Não adicionar o número de tentativas se já estiver incluído na mensagem
     if (attempts && !message.includes('tentativas')) {
         messageElement.textContent += ` (${attempts} tentativas)`;
     }
@@ -189,8 +179,7 @@ socket.on('gameResult', ({ result, message, attempts }) => {
 });
 
 socket.on('rematchRequested', (message) => {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = message;
+    document.getElementById('message').textContent = message;
 });
 
 socket.on('gameRestart', (newPalavra) => {
@@ -198,46 +187,35 @@ socket.on('gameRestart', (newPalavra) => {
     linhaAtual = 0;
     colunaAtual = 0;
     palpite = "";
-    absentLetters.clear();  // Limpa o conjunto de letras ausentes
+    absentLetters.clear();
 
     for (let i = 0; i < linhas; i++) {
         for (let j = 0; j < colunas; j++) {
             const cell = document.getElementById(`cell-${i}-${j}`);
             const opponentCell = document.getElementById(`opponent-cell-${i}-${j}`);
-            
-            // Remove todas as classes relacionadas a estado e animação
-            cell.classList.remove("correct", "present", "absent", "typed", "flip", "happy");
+            cell.classList.remove("correct", "present", "absent", "typed", "flip", "happy", "selected");
             opponentCell.classList.remove("correct", "present", "absent", "typed", "flip", "happy");
-            
-            // Limpa o conteúdo
             cell.textContent = "";
             opponentCell.textContent = "";
-            
-            // Força um reflow para reiniciar animações futuras
             void cell.offsetWidth;
             void opponentCell.offsetWidth;
         }
     }
 
-    // Reseta todas as teclas ao estado inicial
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = false;
         key.classList.remove("absent-key", "correct-key", "present-key");
     });
 
-    // Garante que o teclado seja exibido corretamente em dispositivos móveis
     document.getElementById('keyboard').style.display = 'flex';
-
     document.getElementById('message').textContent = "";
-    console.log(`Jogo reiniciado.`);
-
-    // Reativa o teclado para o novo jogo
+    selectedCell = { row: 0, col: 0 };
+    updateSelectedCell();
     enableKeyboard();
 });
 
 socket.on('waitingOpponent', (message) => {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = message;
+    document.getElementById('message').textContent = message;
     disableKeyboard();
 });
 
@@ -250,13 +228,21 @@ socket.on('playerLeft', (playerId) => {
     }
 });
 
-// Cria a grade do jogo
+// Cria a grade do jogo com suporte a cliques
 const game = document.getElementById("game");
 for (let i = 0; i < linhas; i++) {
     for (let j = 0; j < colunas; j++) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
         cell.id = `cell-${i}-${j}`;
+        cell.addEventListener('click', () => {
+            if (i === linhaAtual && !isSubmitting && palavraCorreta) {
+                selectedCell.row = i;
+                selectedCell.col = j;
+                colunaAtual = j;
+                updateSelectedCell();
+            }
+        });
         game.appendChild(cell);
     }
 }
@@ -278,12 +264,11 @@ playerContainer.appendChild(game);
 // Opponent container
 const opponentContainer = document.createElement("div");
 opponentContainer.classList.add("opponent-container");
-opponentLabel = document.createElement("div"); // Atribuímos o elemento criado diretamente à variável opponentLabel
+opponentLabel = document.createElement("div");
 opponentLabel.classList.add("container-label");
 opponentLabel.textContent = "Oponente";
 opponentContainer.appendChild(opponentLabel);
 
-// Create opponent's grid
 const opponentGame = document.createElement("div");
 opponentGame.id = "opponent-game";
 opponentGame.classList.add("game-container");
@@ -297,7 +282,6 @@ for (let i = 0; i < linhas; i++) {
 }
 opponentContainer.appendChild(opponentGame);
 
-// Add both containers to grids container
 gridsContainer.appendChild(playerContainer);
 gridsContainer.appendChild(opponentContainer);
 
@@ -315,7 +299,7 @@ teclas.forEach(row => {
         const button = document.createElement("button");
         button.textContent = key;
         button.classList.add("key");
-        button.setAttribute('data-letter', key); // Adiciona data-letter
+        button.setAttribute('data-letter', key);
         button.onclick = () => handleKey(key);
         rowDiv.appendChild(button);
     });
@@ -337,9 +321,12 @@ teclas.forEach(row => {
     keyboard.appendChild(rowDiv);
 });
 
+// Inicializa a célula selecionada
+updateSelectedCell();
+
 // Lógica de entrada de teclas
 function handleKey(key) {
-    if (!palavraCorreta || isSubmitting) return; // Prevent input if submitting or no word is set
+    if (!palavraCorreta || isSubmitting || selectedCell.row !== linhaAtual) return;
     const message = document.getElementById("message");
 
     if (key === "ENTER") {
@@ -347,22 +334,47 @@ function handleKey(key) {
             message.textContent = "Digite uma palavra com 5 letras!";
             return;
         }
-        isSubmitting = true; // Set flag to prevent further submissions
-        disableKeyboard(); // Disable input while processing
+        isSubmitting = true;
+        disableKeyboard();
         checkGuess();
     } else if (key === "BACKSPACE") {
-        if (colunaAtual > 0) {
-            colunaAtual--;
-            palpite = palpite.slice(0, -1);
-            const cell = document.getElementById(`cell-${linhaAtual}-${colunaAtual}`);
+        const cell = document.getElementById(`cell-${linhaAtual}-${colunaAtual}`);
+        if (cell.textContent) {
             cell.textContent = "";
+            palpite = palpite.substring(0, colunaAtual) + palpite.substring(colunaAtual + 1);
+        } else if (colunaAtual > 0) {
+            selectedCell.col--;
+            colunaAtual--;
+            updateSelectedCell();
         }
-    } else if (colunaAtual < colunas && key.length === 1) {
+    } else if (key === "ARROWLEFT") {
+        if (colunaAtual > 0) {
+            selectedCell.col--;
+            colunaAtual--;
+            updateSelectedCell();
+        }
+    } else if (key === "ARROWRIGHT") {
+        if (colunaAtual < colunas - 1) {
+            selectedCell.col++;
+            colunaAtual++;
+            updateSelectedCell();
+        }
+    } else if (key.length === 1 && /^[A-Z]$/.test(key)) {
         const cell = document.getElementById(`cell-${linhaAtual}-${colunaAtual}`);
         cell.textContent = key;
         cell.classList.add("typed");
-        palpite += key;
-        colunaAtual++;
+
+        if (palpite.length < colunas) {
+            palpite += key;
+        } else {
+            palpite = palpite.substring(0, colunaAtual) + key + palpite.substring(colunaAtual + 1);
+        }
+
+        if (colunaAtual < colunas - 1) {
+            selectedCell.col++;
+            colunaAtual++;
+            updateSelectedCell();
+        }
     }
 }
 
@@ -375,7 +387,6 @@ function checkGuess() {
     const usedPositions = new Set();
     const isCorrect = palpite === palavraCorreta;
 
-    // Primeiro, verifica as letras corretas (posição exata)
     for (let i = 0; i < colunas; i++) {
         if (palpiteArr[i] === palavraArr[i]) {
             letterStates[i] = 'correct';
@@ -383,7 +394,6 @@ function checkGuess() {
         }
     }
 
-    // Depois, verifica as letras presentes em posições diferentes
     for (let i = 0; i < colunas; i++) {
         if (letterStates[i] !== 'correct') {
             for (let j = 0; j < colunas; j++) {
@@ -396,25 +406,19 @@ function checkGuess() {
         }
     }
 
-    // Aplica as classes correspondentes com animação sequencial
     let lastFlipTimeout = 0;
     for (let i = 0; i < colunas; i++) {
         const cell = document.getElementById(`cell-${linhaAtual}-${i}`);
         const letter = palpiteArr[i];
         const key = document.querySelector(`.key:not(.enter):not(.backspace)[data-letter="${letter}"]`);
         
-        // Adiciona delay sequencial para cada célula
         const flipDelay = i * 200;
-        lastFlipTimeout = flipDelay + 600; // Guarda o tempo da última animação
+        lastFlipTimeout = flipDelay + 600;
 
         setTimeout(() => {
             cell.classList.add('flip');
-            
-            // Adiciona as classes de estado após metade da animação
             setTimeout(() => {
                 cell.classList.add(letterStates[i]);
-                
-                // Atualiza o teclado após a animação
                 if (key) {
                     if (letterStates[i] === 'correct') {
                         key.classList.remove('absent-key', 'present-key');
@@ -433,8 +437,6 @@ function checkGuess() {
                         }
                     }
                 }
-
-                // Se for a última célula e o palpite estiver correto, adiciona animação happy
                 if (i === colunas - 1 && isCorrect) {
                     setTimeout(() => {
                         for (let j = 0; j < colunas; j++) {
@@ -447,10 +449,8 @@ function checkGuess() {
         }, flipDelay);
     }
 
-    // Aguarda todas as animações terminarem antes de continuar
     setTimeout(() => {
         if (currentRoom) {
-            console.log(`Enviando palpite para o oponente: ${palpite}, Linha: ${linhaAtual}, Room: ${currentRoom}`);
             socket.emit('guess', {
                 roomId: currentRoom,
                 palpite: palpite,
@@ -465,33 +465,35 @@ function checkGuess() {
                     attempts: linhaAtual + 1
                 });
             }
-            isSubmitting = false; // Reset flag after game ends
+            isSubmitting = false;
         } else if (linhaAtual < linhas - 1) {
             linhaAtual++;
+            selectedCell.row = linhaAtual;
+            selectedCell.col = 0;
             colunaAtual = 0;
             palpite = "";
             message.textContent = "";
-            isSubmitting = false; // Reset flag
-            enableKeyboard(); // Re-enable input for the next guess
+            isSubmitting = false;
+            enableKeyboard();
+            updateSelectedCell();
         } else {
             if (currentRoom) {
                 socket.emit('gameLose', currentRoom);
             }
-            isSubmitting = false; // Reset flag after game ends
+            isSubmitting = false;
         }
-    }, lastFlipTimeout + 800); // Aguarda todas as animações + tempo da animação happy
+    }, lastFlipTimeout + 800);
 }
 
-// Desativa o teclado ao fim do jogo ou enquanto o oponente não entra
+// Desativa o teclado
 function disableKeyboard() {
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = true;
     });
-    // Also disable physical keyboard input by setting a flag
     window.isKeyboardDisabled = true;
 }
 
-// Reativa o teclado quando o jogo começa
+// Reativa o teclado
 function enableKeyboard() {
     document.querySelectorAll(".key").forEach(key => {
         key.disabled = false;
@@ -501,14 +503,13 @@ function enableKeyboard() {
 
 // Suporte a teclado físico
 document.addEventListener("keydown", (event) => {
-    if (window.isKeyboardDisabled) return; // Ignore physical keyboard input if disabled
+    if (window.isKeyboardDisabled) return;
     const key = event.key.toUpperCase();
-    if (/^[A-Z]$/.test(key) || key === "ENTER" || key === "BACKSPACE") {
+    if (/^[A-Z]$/.test(key) || key === "ENTER" || key === "BACKSPACE" || key === "ARROWLEFT" || key === "ARROWRIGHT") {
         handleKey(key);
     }
 });
 
 socket.on('opponentFinished', (message) => {
-    const messageDiv = document.getElementById('message');
-    messageDiv.textContent = message;
+    document.getElementById('message').textContent = message;
 });

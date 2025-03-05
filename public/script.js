@@ -204,10 +204,18 @@ socket.on('gameRestart', (newPalavra) => {
         for (let j = 0; j < colunas; j++) {
             const cell = document.getElementById(`cell-${i}-${j}`);
             const opponentCell = document.getElementById(`opponent-cell-${i}-${j}`);
+            
+            // Remove todas as classes relacionadas a estado e animação
+            cell.classList.remove("correct", "present", "absent", "typed", "flip", "happy");
+            opponentCell.classList.remove("correct", "present", "absent", "typed", "flip", "happy");
+            
+            // Limpa o conteúdo
             cell.textContent = "";
-            cell.classList.remove("correct", "present", "absent", "typed");
-            opponentCell.textContent = ""; // Garante que não há texto
-            opponentCell.classList.remove("correct", "present", "absent", "typed");
+            opponentCell.textContent = "";
+            
+            // Força um reflow para reiniciar animações futuras
+            void cell.offsetWidth;
+            void opponentCell.offsetWidth;
         }
     }
 
@@ -223,7 +231,7 @@ socket.on('gameRestart', (newPalavra) => {
     document.getElementById('message').textContent = "";
     console.log(`Jogo reiniciado.`);
 
-    // Re-enable the keyboard for the new game
+    // Reativa o teclado para o novo jogo
     enableKeyboard();
 });
 

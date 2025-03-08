@@ -14,17 +14,7 @@ function normalizeText(text) {
 
 function isValidGuess(guess, palavra) {
     if (!guess || typeof guess !== 'string' || guess.length !== 5) return false;
-    
-    // Compare each letter exactly
-    const guessArr = guess.split('');
-    const palavraArr = palavra.split('');
-    
-    for (let i = 0; i < 5; i++) {
-        if (normalizeText(guessArr[i]) !== normalizeText(palavraArr[i])) {
-            return false;
-        }
-    }
-    return true;
+    return normalizeText(guess) === normalizeText(palavra);
 }
 
 io.on('connection', (socket) => {
@@ -73,49 +63,52 @@ io.on('connection', (socket) => {
         socket.to(roomId).emit('opponentGuess', { 
             palpite: normalizeText(palpite), 
             linha,
-            isCorrect 
+            isCorrect
         });
+
+        if (isCorrect) {
+            room.playerStates.get(socket.id).finished = true;
+            room.playerStates.get(socket.id).won = true;
+        }
     });
 
     socket.on('gameWin', ({ roomId, attempts, palpite }) => {
         const room = rooms.get(roomId);
         if (!room) return;
 
-        // Strict validation to ensure the guess matches exactly
+        // Validação estrita para garantir correspondência exata
         if (!isValidGuess(palpite, room.palavra)) {
             socket.emit('invalidGuess');
             return;
         }
 
-        if (room) {
-            room.playerStates.get(socket.id).finished = true;
-            room.playerStates.get(socket.id).won = true;
-            room.playerStates.get(socket.id).attempts = attempts;
+        room.playerStates.get(socket.id).finished = true;
+        room.playerStates.get(socket.id).won = true;
+        room.playerStates.get(socket.id).attempts = attempts;
 
-            const otherPlayerId = room.players.find(id => id !== socket.id);
-            const otherPlayerState = room.playerStates.get(otherPlayerId);
+        const otherPlayerId = room.players.find(id => id !== socket.id);
+        const otherPlayerState = room.playerStates.get(otherPlayerId);
 
-            if (otherPlayerState.finished) {
-                // Ambos terminaram, determinar o vencedor
-                if (otherPlayerState.won) {
-                    // Ambos acertaram, comparar tentativas
-                    if (attempts < otherPlayerState.attempts) {
-                        announceWinner(room, socket.id);
-                    } else if (attempts > otherPlayerState.attempts) {
-                        announceWinner(room, otherPlayerId);
-                    } else {
-                        // Empate
-                        announceTie(room);
-                    }
-                } else {
-                    // Outro jogador errou, este ganhou
+        if (otherPlayerState.finished) {
+            // Ambos terminaram, determinar o vencedor
+            if (otherPlayerState.won) {
+                // Ambos acertaram, comparar tentativas
+                if (attempts < otherPlayerState.attempts) {
                     announceWinner(room, socket.id);
+                } else if (attempts > otherPlayerState.attempts) {
+                    announceWinner(room, otherPlayerId);
+                } else {
+                    // Empate
+                    announceTie(room);
                 }
             } else {
-                // Aguardar outro jogador
-                socket.emit('waitingOpponent', 'Você acertou! Aguardando oponente terminar...');
-                io.to(otherPlayerId).emit('opponentFinished', 'Oponente acertou! Complete suas tentativas.');
+                // Outro jogador errou, este ganhou
+                announceWinner(room, socket.id);
             }
+        } else {
+            // Aguardar outro jogador
+            socket.emit('waitingOpponent', 'Você acertou! Aguardando oponente terminar...');
+            io.to(otherPlayerId).emit('opponentFinished', 'Oponente acertou! Complete suas tentativas.');
         }
     });
 

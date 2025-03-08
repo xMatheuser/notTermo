@@ -1,4 +1,5 @@
 const express = require('express');
+const palavras = require('./palavras').default;
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
@@ -6,7 +7,6 @@ const io = require('socket.io')(http);
 app.use(express.static(__dirname + '/public'));
 
 const rooms = new Map();
-const palavras = ["ABRIR"];
 
 function normalizeText(text) {
     return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
@@ -14,9 +14,17 @@ function normalizeText(text) {
 
 function isValidGuess(guess, palavra) {
     if (!guess || typeof guess !== 'string' || guess.length !== 5) return false;
-    const normalizedGuess = normalizeText(guess);
-    const normalizedPalavra = normalizeText(palavra);
-    return normalizedGuess === normalizedPalavra;
+    
+    // Compare each letter exactly
+    const guessArr = guess.split('');
+    const palavraArr = palavra.split('');
+    
+    for (let i = 0; i < 5; i++) {
+        if (normalizeText(guessArr[i]) !== normalizeText(palavraArr[i])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 io.on('connection', (socket) => {
@@ -33,7 +41,11 @@ io.on('connection', (socket) => {
         });
         socket.join(roomId);
         socket.emit('roomCreated', roomId);
-        console.log(`Sala criada: ${roomId}, Jogadores: ${rooms.get(roomId).players}`);
+        
+        // Adiciona log para teste
+        console.log('\x1b[33m%s\x1b[0m', `[TEST MODE] Sala ${roomId} criada com a palavra: ${palavra}`);
+        
+        console.log(`Sala ${roomId} criada por ${socket.id}`);
     });
 
     socket.on('joinRoom', (roomId) => {
@@ -44,7 +56,8 @@ io.on('connection', (socket) => {
             room.rematchRequests.set(socket.id, false);
             socket.join(roomId);
             socket.emit('joinRoomSuccess', roomId);
-            io.to(roomId).emit('gameStart', room.palavra);
+            // Enviando a palavra normalizada para evitar problemas com acentos
+            io.to(roomId).emit('gameStart', normalizeText(room.palavra));
             console.log(`Jogador ${socket.id} entrou na sala ${roomId}, Jogadores: ${room.players}`);
         } else {
             socket.emit('roomError', 'Sala não encontrada ou cheia');
@@ -66,10 +79,14 @@ io.on('connection', (socket) => {
 
     socket.on('gameWin', ({ roomId, attempts, palpite }) => {
         const room = rooms.get(roomId);
-        if (!room || !isValidGuess(palpite, room.palavra)) {
+        if (!room) return;
+
+        // Strict validation to ensure the guess matches exactly
+        if (!isValidGuess(palpite, room.palavra)) {
             socket.emit('invalidGuess');
             return;
         }
+
         if (room) {
             room.playerStates.get(socket.id).finished = true;
             room.playerStates.get(socket.id).won = true;
@@ -139,6 +156,9 @@ io.on('connection', (socket) => {
             if (allAccepted) {
                 const newPalavra = palavras[Math.floor(Math.random() * palavras.length)];
                 room.palavra = newPalavra;
+                // Adiciona log para teste na revanche
+                console.log('\x1b[33m%s\x1b[0m', `[TEST MODE] Nova palavra na sala ${roomId}: ${newPalavra}`);
+                
                 room.playerStates.forEach((state, playerId) => {
                     state.finished = false;
                     state.won = false;

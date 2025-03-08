@@ -394,9 +394,10 @@ function handleKey(key) {
 // Modificar a função checkGuess
 function checkGuess() {
     const message = document.getElementById("message");
-    const normalizedPalpite = normalizeText(palpite);
-    const normalizedPalavra = normalizeText(palavraCorreta);
-    const isCorrect = normalizedPalpite === normalizedPalavra;
+    const normalizedPalpite = palpite.toUpperCase();
+    const normalizedPalavra = palavraCorreta.toUpperCase();
+    // Validação estrita - comparando exatamente as palavras
+    const isCorrect = normalizedPalpite.split('').every((letter, index) => letter === normalizedPalavra.split('')[index]);
     
     if (palpite.length !== 5) {
         message.textContent = "Digite uma palavra com 5 letras!";
@@ -408,23 +409,33 @@ function checkGuess() {
     const palavraArr = palavraCorreta.split('');
     const palpiteArr = palpite.split('');
     const letterStates = new Array(5).fill('absent');
-    const usedPositions = new Set();
+    
+    // Criar mapa de contagem de letras da palavra correta
+    const letterCounts = {};
+    palavraArr.forEach(letter => {
+        const normalized = normalizeText(letter);
+        letterCounts[normalized] = (letterCounts[normalized] || 0) + 1;
+    });
 
+    // Primeiro marcar matches exatos - Verificando posição e letra
     for (let i = 0; i < colunas; i++) {
-        if (isSameLetter(palpiteArr[i], palavraArr[i])) {
+        const palavraNormalized = normalizeText(palavraArr[i]);
+        const palpiteNormalized = normalizeText(palpiteArr[i]);
+        
+        if (palavraNormalized === palpiteNormalized) {
             letterStates[i] = 'correct';
-            usedPositions.add(i);
+            const normalized = normalizeText(palpiteArr[i]);
+            letterCounts[normalized]--;
         }
     }
-
+    
+    // Depois verificar letras presentes em outras posições
     for (let i = 0; i < colunas; i++) {
         if (letterStates[i] !== 'correct') {
-            for (let j = 0; j < colunas; j++) {
-                if (!usedPositions.has(j) && isSameLetter(palpiteArr[i], palavraArr[j])) {
-                    letterStates[i] = 'present';
-                    usedPositions.add(j);
-                    break;
-                }
+            const normalized = normalizeText(palpiteArr[i]);
+            if (letterCounts[normalized] > 0) {
+                letterStates[i] = 'present';
+                letterCounts[normalized]--;
             }
         }
     }
@@ -482,7 +493,7 @@ function checkGuess() {
             });
         }
 
-        if (isCorrect) {
+        if (isCorrect && normalizedPalpite === normalizedPalavra) { // Dupla verificação
             if (currentRoom) {
                 socket.emit('gameWin', {
                     roomId: currentRoom,

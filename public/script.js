@@ -28,6 +28,15 @@ function updateSelectedCell() {
     }
 }
 
+// Add these helper functions at the top of the file
+function normalizeText(text) {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+}
+
+function isSameLetter(a, b) {
+    return normalizeText(a) === normalizeText(b);
+}
+
 // Eventos do menu
 document.getElementById('createRoom').onclick = () => {
     socket.emit('createRoom');
@@ -100,7 +109,7 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
         const usedPositions = new Set();
 
         for (let i = 0; i < colunas; i++) {
-            if (palpiteArr[i] === palavraArr[i]) {
+            if (isSameLetter(palpiteArr[i], palavraArr[i])) {
                 letterStates[i] = 'correct';
                 usedPositions.add(i);
             }
@@ -109,7 +118,7 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
         for (let i = 0; i < colunas; i++) {
             if (letterStates[i] !== 'correct') {
                 for (let j = 0; j < colunas; j++) {
-                    if (!usedPositions.has(j) && palpiteArr[i] === palavraArr[j]) {
+                    if (!usedPositions.has(j) && isSameLetter(palpiteArr[i], palavraArr[j])) {
                         letterStates[i] = 'present';
                         usedPositions.add(j);
                         break;
@@ -362,15 +371,16 @@ function handleKey(key) {
             colunaAtual++;
             updateSelectedCell();
         }
-    } else if (key.length === 1 && /^[A-Z]$/.test(key)) {
+    } else if (key.length === 1 && /^[A-ZÀ-ÿ]$/i.test(key)) {
         const cell = document.getElementById(`cell-${linhaAtual}-${colunaAtual}`);
-        cell.textContent = key;
+        const normalizedKey = key.toUpperCase();
+        cell.textContent = normalizedKey;
         cell.classList.add("typed");
 
         if (palpite.length < colunas) {
-            palpite += key;
+            palpite += normalizedKey;
         } else {
-            palpite = palpite.substring(0, colunaAtual) + key + palpite.substring(colunaAtual + 1);
+            palpite = palpite.substring(0, colunaAtual) + normalizedKey + palpite.substring(colunaAtual + 1);
         }
 
         if (colunaAtual < colunas - 1) {
@@ -388,10 +398,10 @@ function checkGuess() {
     const palpiteArr = palpite.split('');
     const letterStates = new Array(5).fill('absent');
     const usedPositions = new Set();
-    const isCorrect = palpite === palavraCorreta;
+    const isCorrect = normalizeText(palpite) === normalizeText(palavraCorreta);
 
     for (let i = 0; i < colunas; i++) {
-        if (palpiteArr[i] === palavraArr[i]) {
+        if (isSameLetter(palpiteArr[i], palavraArr[i])) {
             letterStates[i] = 'correct';
             usedPositions.add(i);
         }
@@ -400,7 +410,7 @@ function checkGuess() {
     for (let i = 0; i < colunas; i++) {
         if (letterStates[i] !== 'correct') {
             for (let j = 0; j < colunas; j++) {
-                if (!usedPositions.has(j) && palpiteArr[i] === palavraArr[j]) {
+                if (!usedPositions.has(j) && isSameLetter(palpiteArr[i], palavraArr[j])) {
                     letterStates[i] = 'present';
                     usedPositions.add(j);
                     break;
@@ -413,7 +423,8 @@ function checkGuess() {
     for (let i = 0; i < colunas; i++) {
         const cell = document.getElementById(`cell-${linhaAtual}-${i}`);
         const letter = palpiteArr[i];
-        const key = document.querySelector(`.key:not(.enter):not(.backspace)[data-letter="${letter}"]`);
+        const normalizedLetter = normalizeText(letter);
+        const key = document.querySelector(`.key:not(.enter):not(.backspace)[data-letter="${normalizedLetter}"]`);
         
         const flipDelay = i * 200;
         lastFlipTimeout = flipDelay + 600;
@@ -433,7 +444,7 @@ function checkGuess() {
                             key.classList.add('present-key');
                             key.disabled = false;
                         }
-                    } else if (letterStates[i] === 'absent' && !palavraCorreta.includes(letter)) {
+                    } else if (letterStates[i] === 'absent' && !palavraCorreta.split('').some(c => isSameLetter(c, letter))) {
                         if (!key.classList.contains('correct-key') && !key.classList.contains('present-key')) {
                             key.classList.add('absent-key');
                             key.disabled = true;
@@ -508,7 +519,7 @@ function enableKeyboard() {
 document.addEventListener("keydown", (event) => {
     if (window.isKeyboardDisabled) return;
     const key = event.key.toUpperCase();
-    if (/^[A-Z]$/.test(key) || key === "ENTER" || key === "BACKSPACE" || key === "ARROWLEFT" || key === "ARROWRIGHT") {
+    if (/^[A-ZÀ-ÿ]$/i.test(key) || key === "ENTER" || key === "BACKSPACE" || key === "ARROWLEFT" || key === "ARROWRIGHT") {
         handleKey(key);
     }
 });

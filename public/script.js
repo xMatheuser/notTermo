@@ -396,8 +396,7 @@ function checkGuess() {
     const message = document.getElementById("message");
     const normalizedPalpite = palpite.toUpperCase();
     const normalizedPalavra = palavraCorreta.toUpperCase();
-    // Validação estrita - comparando exatamente as palavras
-    const isCorrect = normalizedPalpite.split('').every((letter, index) => letter === normalizedPalavra.split('')[index]);
+    const isCorrect = normalizedPalpite === normalizedPalavra;
     
     if (palpite.length !== 5) {
         message.textContent = "Digite uma palavra com 5 letras!";
@@ -410,32 +409,33 @@ function checkGuess() {
     const palpiteArr = palpite.split('');
     const letterStates = new Array(5).fill('absent');
     
-    // Criar mapa de contagem de letras da palavra correta
-    const letterCounts = {};
-    palavraArr.forEach(letter => {
-        const normalized = normalizeText(letter);
-        letterCounts[normalized] = (letterCounts[normalized] || 0) + 1;
-    });
+    // Garantir que letterCounts seja limpo e reiniciado para cada novo palpite
+    const letterCounts = Object.fromEntries(
+        palavraArr.map(letter => normalizeText(letter))
+            .reduce((acc, letter) => {
+                acc.set(letter, (acc.get(letter) || 0) + 1);
+                return acc;
+            }, new Map())
+    );
 
-    // Primeiro marcar matches exatos - Verificando posição e letra
+    // Primeiro marcar matches exatos
     for (let i = 0; i < colunas; i++) {
-        const palavraNormalized = normalizeText(palavraArr[i]);
-        const palpiteNormalized = normalizeText(palpiteArr[i]);
+        const normalizedGuess = normalizeText(palpiteArr[i]);
+        const normalizedWord = normalizeText(palavraArr[i]);
         
-        if (palavraNormalized === palpiteNormalized) {
+        if (normalizedGuess === normalizedWord && letterCounts[normalizedGuess] > 0) {
             letterStates[i] = 'correct';
-            const normalized = normalizeText(palpiteArr[i]);
-            letterCounts[normalized]--;
+            letterCounts[normalizedGuess]--;
         }
     }
     
     // Depois verificar letras presentes em outras posições
     for (let i = 0; i < colunas; i++) {
-        if (letterStates[i] !== 'correct') {
-            const normalized = normalizeText(palpiteArr[i]);
-            if (letterCounts[normalized] > 0) {
+        if (letterStates[i] === 'absent') {
+            const normalizedGuess = normalizeText(palpiteArr[i]);
+            if (letterCounts[normalizedGuess] > 0) {
                 letterStates[i] = 'present';
-                letterCounts[normalized]--;
+                letterCounts[normalizedGuess]--;
             }
         }
     }

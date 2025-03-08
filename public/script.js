@@ -391,14 +391,24 @@ function handleKey(key) {
     }
 }
 
-// Verifica o palpite
+// Modificar a função checkGuess
 function checkGuess() {
     const message = document.getElementById("message");
+    const normalizedPalpite = normalizeText(palpite);
+    const normalizedPalavra = normalizeText(palavraCorreta);
+    const isCorrect = normalizedPalpite === normalizedPalavra;
+    
+    if (palpite.length !== 5) {
+        message.textContent = "Digite uma palavra com 5 letras!";
+        isSubmitting = false;
+        enableKeyboard();
+        return;
+    }
+
     const palavraArr = palavraCorreta.split('');
     const palpiteArr = palpite.split('');
     const letterStates = new Array(5).fill('absent');
     const usedPositions = new Set();
-    const isCorrect = normalizeText(palpite) === normalizeText(palavraCorreta);
 
     for (let i = 0; i < colunas; i++) {
         if (isSameLetter(palpiteArr[i], palavraArr[i])) {
@@ -467,7 +477,7 @@ function checkGuess() {
         if (currentRoom) {
             socket.emit('guess', {
                 roomId: currentRoom,
-                palpite: palpite,
+                palpite: normalizedPalpite,
                 linha: linhaAtual
             });
         }
@@ -476,7 +486,8 @@ function checkGuess() {
             if (currentRoom) {
                 socket.emit('gameWin', {
                     roomId: currentRoom,
-                    attempts: linhaAtual + 1
+                    attempts: linhaAtual + 1,
+                    palpite: normalizedPalpite
                 });
             }
             isSubmitting = false;
@@ -526,4 +537,12 @@ document.addEventListener("keydown", (event) => {
 
 socket.on('opponentFinished', (message) => {
     document.getElementById('message').textContent = message;
+});
+
+// Adicionar novo evento para tratamento de palpite inválido
+socket.on('invalidGuess', () => {
+    const message = document.getElementById("message");
+    message.textContent = "Palpite inválido!";
+    isSubmitting = false;
+    enableKeyboard();
 });

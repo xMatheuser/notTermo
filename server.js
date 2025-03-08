@@ -6,9 +6,18 @@ const io = require('socket.io')(http);
 app.use(express.static(__dirname + '/public'));
 
 const rooms = new Map();
-//const palavras = ["ABRIR"];
+const palavras = ["ABRIR"];
 
-const palavras = ["Águas", "ávião", "cafés"];
+function normalizeText(text) {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+}
+
+function isValidGuess(guess, palavra) {
+    if (!guess || typeof guess !== 'string' || guess.length !== 5) return false;
+    const normalizedGuess = normalizeText(guess);
+    const normalizedPalavra = normalizeText(palavra);
+    return normalizedGuess === normalizedPalavra;
+}
 
 io.on('connection', (socket) => {
     console.log('Usuario conectado:', socket.id);
@@ -44,13 +53,23 @@ io.on('connection', (socket) => {
     });
 
     socket.on('guess', ({ roomId, palpite, linha }) => {
-        console.log(`Palpite recebido de ${socket.id} na sala ${roomId}: ${palpite}, Linha: ${linha}`);
-        socket.to(roomId).emit('opponentGuess', { palpite, linha });
-        console.log(`Palpite enviado para outros jogadores na sala ${roomId}: ${palpite}, Linha: ${linha}`);
+        const room = rooms.get(roomId);
+        if (!room) return;
+
+        const isCorrect = isValidGuess(palpite, room.palavra);
+        socket.to(roomId).emit('opponentGuess', { 
+            palpite: normalizeText(palpite), 
+            linha,
+            isCorrect 
+        });
     });
 
-    socket.on('gameWin', ({ roomId, attempts }) => {
+    socket.on('gameWin', ({ roomId, attempts, palpite }) => {
         const room = rooms.get(roomId);
+        if (!room || !isValidGuess(palpite, room.palavra)) {
+            socket.emit('invalidGuess');
+            return;
+        }
         if (room) {
             room.playerStates.get(socket.id).finished = true;
             room.playerStates.get(socket.id).won = true;

@@ -101,7 +101,7 @@ socket.on('joinRoomSuccess', (roomId) => {
     currentRoom = roomId;
 });
 
-socket.on('opponentGuess', ({ palpite, linha }) => {
+socket.on('opponentGuess', ({ palpite, linha, isCorrect }) => {
     requestAnimationFrame(() => {
         const palavraArr = palavraCorreta.split('');
         const palpiteArr = palpite.split('');
@@ -139,6 +139,15 @@ socket.on('opponentGuess', ({ palpite, linha }) => {
                     cell.classList.add('flip');
                     setTimeout(() => {
                         cell.classList.add(letterStates[i]);
+                        if (isCorrect && i === colunas - 1) {
+                            setTimeout(() => {
+                                // Adiciona animação happy em todas as células da linha quando o oponente acerta
+                                for (let j = 0; j < colunas; j++) {
+                                    const happyCell = document.getElementById(`opponent-cell-${linha}-${j}`);
+                                    happyCell.classList.add('happy');
+                                }
+                            }, 100);
+                        }
                         resolve();
                     }, 250);
                 }, i * 200);
